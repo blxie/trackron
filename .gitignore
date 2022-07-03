@@ -12,3 +12,4 @@ trackron.egg*
 outputs/
 checkpoints/
 *egg
+.git
