@@ -897,6 +897,7 @@ class UnifiedTransformerTracker(nn.Module):
             det_boxes = ref_info['public_detections'][..., :4]
             det_logits = ref_info['public_detections'][..., 4]
 
+        # TRACED
         if ref_info.get('proposal', None) is not None:
             # track mode
             pre_proposals, pre_target_feat = ref_info['proposal'], ref_info[
@@ -929,6 +930,8 @@ class UnifiedTransformerTracker(nn.Module):
                                     in_format='cxcywh',
                                     out_format='xyxy',
                                     reverse=True)
+        # BUG utt.yaml 中将 PUBLIC_DETECTION: True
+        # 根据 ref_info = {} 推测得到
         target_feat = self.get_target_roi_feat(search_feat, boxes_abs,
                                                self.mot_roi).view(
                                                    *det_boxes.shape[:2], -1)

@@ -31,22 +31,22 @@ checkpoints
 
 Test FairMOT
 ```
- torchrun --nproc_per_node 8 --master_port 9999 tools/train_dist.py --config-file configs/fairmot/fairmot.yaml --config-func fairmot --mode mot --eval-only
+ torchrun --nproc_per_node 1 --master_port 9999 tools/train_dist.py --config-file configs/fairmot/fairmot.yaml --config-func fairmot --mode mot --eval-only
  ```
 
  Test TransTrack
  ```
- torchrun --nproc_per_node 8 --master_port 9999 tools/train_dist.py --config-file configs/transtrack/transtrack.yaml --config-func transtrack --mode mot --eval-only
+ torchrun --nproc_per_node 1 --master_port 9999 tools/train_dist.py --config-file configs/transtrack/transtrack.yaml --config-func transtrack --mode mot --eval-only
  ```
 
  Test ByteTrack
  ```
- torchrun --nproc_per_node 8 --master_port 9999 tools/train_dist.py --config-file configs/bytetrack/bytetrack.yaml --config-func bytetrack --mode mot --eval-only
+ torchrun --nproc_per_node 1 --master_port 9999 tools/train_dist.py --config-file configs/bytetrack/bytetrack.yaml --config-func bytetrack --mode mot --eval-only
  ```
 
  Test UTT
  ```
- torchrun --nproc_per_node 8 --master_port 9999 tools/train_dist.py --config-file configs/utt/utt.yaml --config-func utt --mode mot --eval-only
+ torchrun --nproc_per_node 1 --master_port 9999 tools/train_dist.py --config-file configs/utt/utt.yaml --config-func utt --mode mot --eval-only
  ```
 
 

@@ -14,26 +14,26 @@ and expected to return a `nn.Module` object.
 
 
 def build_model(cfg):
-  model = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)(cfg)
-  model.to(torch.device(cfg.MODEL.DEVICE))
-  return model
+    model = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)(cfg)
+    model.to(torch.device(cfg.MODEL.DEVICE))
+    return model
 
 
 class BaseModel(nn.Module):
 
-  def __init__(self):
-    super().__init__()
+    def __init__(self):
+        super().__init__()
 
-  def forward(self, data, mode='sot'):
-    if mode == 'sot':
-      return self.forward_sot(data)
-    elif mode == 'mot':
-      return self.forward_mot(data)
-  
-  @abstractmethod
-  def forward_sot(self, data):
-    raise NotImplementedError
+    def forward(self, data, mode='sot'):
+        if mode == 'sot':
+            return self.forward_sot(data)
+        elif mode == 'mot':
+            return self.forward_mot(data)
 
-  @abstractmethod
-  def forward_mot(self, data):
-    raise NotImplementedError
+    @abstractmethod
+    def forward_sot(self, data):
+        raise NotImplementedError
+
+    @abstractmethod
+    def forward_mot(self, data):
+        raise NotImplementedError

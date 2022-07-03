@@ -144,17 +144,28 @@ class MOTDataset(BaseDataset):
         min_index = min(
             [image['frame_index'] for image in self.vid_img_map[vid]])
 
-        #### external detection
+        # TRACED external detection
         if self.public_detection:
-            # pub_det_path = self.base_path / vname / 'det/det.txt'                            ### public
-            pub_det_path = self.base_path.parent / 'dets/fairmot_det' / f'{vname}.txt'  ####fairmot
+            # TODO 根据实际需求更改 public
+            pub_det_path = self.base_path / vname / 'det/det.txt'
             pub_dets = np.loadtxt(pub_det_path,
                                   dtype=np.float32,
                                   delimiter=',')
             self.init_public_detections(init_data,
                                         pub_dets,
                                         min_index,
-                                        type='fairmot')
+                                        type='public')
+
+            # fairmot
+            # pub_det_path = self.base_path.parent / 'dets/fairmot_det' / f'{vname}.txt'
+            # pub_dets = np.loadtxt(pub_det_path,
+            #                       dtype=np.float32,
+            #                       delimiter=',')
+            # self.init_public_detections(init_data,
+            #                             pub_dets,
+            #                             min_index,
+            #                             type='fairmot')
+            
         if self.has_gt:
             gt_name = f'gt_{self.split}.txt' if self.split in [
                 'train_half', 'val_half'

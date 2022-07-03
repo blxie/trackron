@@ -12,11 +12,7 @@ from trackron.utils.events import (CommonMetricPrinter, JSONWriter,
                                    TensorboardXWriter)
 from trackron.utils.logger import setup_logger
 
-__all__ = [
-    "default_argument_parser",
-    "default_setup",
-    "default_writers"
-]
+__all__ = ["default_argument_parser", "default_setup", "default_writers"]
 
 
 def default_argument_parser(epilog=None):
@@ -58,12 +54,10 @@ Run on multiple machines:
         help="Whether to attempt to resume from the checkpoint directory. "
         "See documentation of `DefaultTrainer.resume_or_load()` for what it means.",
     )
-    parser.add_argument(
-        "--mode",
-        type=str,
-        default="sot",
-        help="tracking mode for training and inference"
-    )
+    parser.add_argument("--mode",
+                        type=str,
+                        default="sot",
+                        help="tracking mode for training and inference")
     parser.add_argument("--eval-only",
                         action="store_true",
                         help="perform evaluation only")
@@ -71,10 +65,7 @@ Run on multiple machines:
                         type=int,
                         default=1,
                         help="number of gpus *per machine*")
-    parser.add_argument("--debug",
-                        type=int,
-                        default=0,
-                        help="debug level")
+    parser.add_argument("--debug", type=int, default=0, help="debug level")
     parser.add_argument("--num-machines",
                         type=int,
                         default=1,
@@ -111,6 +102,7 @@ For python-based LazyConfig, use "path.key=value".
     )
     return parser
 
+
 def default_writers(output_dir: str, max_iter: Optional[int] = None):
     """
     Build a list of :class:`EventWriter` to be used.
@@ -130,6 +122,7 @@ def default_writers(output_dir: str, max_iter: Optional[int] = None):
         JSONWriter(os.path.join(output_dir, "metrics.json")),
         TensorboardXWriter(output_dir),
     ]
+
 
 def default_setup(cfg, args):
     """

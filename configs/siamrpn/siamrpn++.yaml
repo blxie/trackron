@@ -29,7 +29,7 @@ SOT:
     NAME: "SiamRPNObjective"
 
   DATASET:
-    ROOT: "./data"
+    ROOT: "/data"
     CLASS_NAME: "TrackingDataset"
     PROCESSING_NAME: "SiamRPNProcessing"
     BOX_MODE: 'xyxy'

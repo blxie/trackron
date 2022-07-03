@@ -16,6 +16,7 @@ MODEL:
     POOL_SCALES: [0.0625]
     POOL_SAMPLE_RATIO: 2
     POOL_TYPE: "ROIAlignV2"
+    # TRACED
     BOX_HEAD:
       NAME: "Corner2"
       INPUT_DIM: 512
@@ -25,9 +26,11 @@ MODEL:
     POOL_SCALES: [0.125, 0.0625, 0.03125, 0.015625]
     POOL_SAMPLE_RATIO: 2
     POOL_TYPE: "ROIAlignV2"
+  # TRACED
   BOX_HEAD:
     HIDDEN_DIM: 512
     INPUT_DIM: 512
+  # TRACED
   TRACK_HEAD:
     OUTPUT_SCORE: False
     ITERATIONS: 6
@@ -43,7 +46,7 @@ SOT:
   OBJECTIVE:
     NAME: "SequenceSOTObjective"
   DATASET:
-    ROOT: "./data"
+    ROOT: "/data"
     CLASS_NAME: "SequenceDataset"
     PROCESSING_NAME: "SequenceProcessing"
     BOX_MODE: 'xyxy'
@@ -75,7 +78,7 @@ MOT:
     # NAME: "MOTObjective"
     NUM_CLASS: 20
   DATASET:
-    ROOT: "./data"
+    ROOT: "/data"
     CLASS_NAME: "MOTDataset"
     PROCESSING_NAME: "MOTProcessing"
     MAX_SAMPLE_INTERVAL: 200
@@ -88,7 +91,7 @@ MOT:
     TEST:
       DATASET_NAMES: ["mot_pub"]
       SPLITS: ["val_half"]
-      VERSIONS: ["16"]
+      VERSIONS: ["17"]
 
   DATALOADER:
     NUM_WORKERS: 8
@@ -126,10 +129,8 @@ TEST:
 TRACKER:
   NAME: "SiameseTracker"
   MEMORY_SIZE: 2
-  PUBLIC_DETECTION: False
+  # PUBLIC_DETECTION: False
+  PUBLIC_DETECTION: True
   DETECTION_THRESH: 0.4
   TRACKING_THRESH: 1.0
   MATCHING_THRESH: 1.2
-
-  
-      

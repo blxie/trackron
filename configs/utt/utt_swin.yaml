@@ -43,7 +43,7 @@ SOT:
   OBJECTIVE:
     NAME: "SequenceSOTObjective"
   DATASET:
-    ROOT: "./data"
+    ROOT: "/data"
     CLASS_NAME: "SequenceDataset"
     PROCESSING_NAME: "SequenceProcessing"
     BOX_MODE: 'xyxy'
@@ -75,7 +75,7 @@ MOT:
     # NAME: "MOTObjective"
     NUM_CLASS: 20
   DATASET:
-    ROOT: "./data"
+    ROOT: "/data"
     CLASS_NAME: "MOTDataset"
     PROCESSING_NAME: "MOTProcessing"
     MAX_SAMPLE_INTERVAL: 200

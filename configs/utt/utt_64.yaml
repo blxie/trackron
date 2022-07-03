@@ -20,7 +20,7 @@ MODEL:
 
 SOT:
   DATASET:
-    ROOT: "./data"
+    ROOT: "/data"
     MAX_SAMPLE_INTERVAL: 200
     SEARCH:
       SIZE: 352

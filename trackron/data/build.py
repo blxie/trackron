@@ -105,7 +105,8 @@ def _train_loader_from_config(cfg, mapper=None, *, dataset=None, sampler=None):
                 dataset, cfg.DATALOADER.REPEAT_THRESHOLD)
             sampler = RepeatFactorTrainingSampler(repeat_factors)
         else:
-            raise ValueError("Unknown training sampler: {}".format(sampler_name))
+            raise ValueError(
+                "Unknown training sampler: {}".format(sampler_name))
 
     return {
         "dataset": dataset,
@@ -130,10 +131,10 @@ def build_tracking_loader(cfg, *, sampler=None, training=False):
                 dataset, cfg.DATALOADER.REPEAT_THRESHOLD)
             sampler = RepeatFactorTrainingSampler(repeat_factors)
         else:
-            raise ValueError("Unknown training sampler: {}".format(sampler_name))
+            raise ValueError(
+                "Unknown training sampler: {}".format(sampler_name))
 
-
-#   sampler = TrainingSampler(dataset)
+    # sampler = TrainingSampler(dataset)
     world_size = get_world_size()
     total_batch_size = cfg.DATALOADER.BATCH_SIZE
     assert (
@@ -147,15 +148,16 @@ def build_tracking_loader(cfg, *, sampler=None, training=False):
         sampler, batch_size,
         drop_last=True)  # drop_last so the batch always have the same size
     collate_fn = trivial_batch_collator if cfg.DATALOADER.COLLATE_FN is not None else None
-    loader = TrackingLoader('train',
-                            dataset,
-                            training=True,
-                            batch_sampler=batch_sampler,
-                            # batch_size=batch_size,
-                            num_workers=cfg.DATALOADER.NUM_WORKERS,
-                            collate_fn=collate_fn,
-                            stack_dim=stack_dim,
-                            worker_init_fn=worker_init_reset_seed)
+    loader = TrackingLoader(
+        'train',
+        dataset,
+        training=True,
+        batch_sampler=batch_sampler,
+        # batch_size=batch_size,
+        num_workers=cfg.DATALOADER.NUM_WORKERS,
+        collate_fn=collate_fn,
+        stack_dim=stack_dim,
+        worker_init_fn=worker_init_reset_seed)
 
     return loader
 
@@ -221,8 +223,7 @@ def build_tracking_test_loader(cfg,
     else:
         dataset_names = [dataset_name]
     dataset = get_dataset(Path(cfg.DATASET.ROOT), dataset_names,
-                                       cfg.DATASET.TEST.VERSIONS,
-                                       cfg.DATASET.TEST.SPLITS)
+                          cfg.DATASET.TEST.VERSIONS, cfg.DATASET.TEST.SPLITS)
     if isinstance(dataset, list):
         dataset = DatasetFromList(dataset, copy=False)
     if sampler is None:

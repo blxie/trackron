@@ -8,11 +8,11 @@ from .vos_configs import vos_default
 from .boxhead_configs import boxhead_corner, boxhead_mlp, boxhead_target_trans, boxhead_center
 
 
-
 def add_sot_config(cfg):
     cfg.MODEL.SOT = sot_s3t()
     cfg.SOT = sot_default()
     return cfg
+
 
 def add_dimp_config(cfg):
     cfg.MODEL.SOT = sot_dimp(cfg)
@@ -23,6 +23,7 @@ def add_dimp_config(cfg):
     cfg.TRACKER.MEMORY_SIZE = 50
     cfg.TRACKER.PARAMETER = 'dimp50'
     return cfg
+
 
 def add_siamrpn_config(cfg):
     cfg.MODEL.SOT = sot_siamrpn(cfg)
@@ -40,6 +41,7 @@ def add_stark_config(cfg):
     cfg.MODEL.SOT = sot_stark()
     return cfg
 
+
 def add_fairmot_config(cfg):
     """
     config for FairMOT
@@ -54,12 +56,14 @@ def add_fairmot_config(cfg):
     cfg.MODEL.MAX_OBJECTS = 500
     return cfg
 
+
 def add_transtrack_config(cfg):
     """config for TransTrack
   """
     cfg.MODEL.MOT = mot_transtrack()
     cfg.MOT = mot_default()
     return cfg
+
 
 def add_bytetrack_config(cfg):
     """config for Byterack
@@ -68,25 +72,30 @@ def add_bytetrack_config(cfg):
     cfg.MOT = mot_default()
     return cfg
 
+
 def add_sot_s3t_config(cfg):
     cfg.MODEL.SOT = sot_s3t()
     cfg.SOT = sot_default()
     return cfg
+
 
 def add_sot_dfdetr_config(cfg):
     cfg = add_sot_s3t_config(cfg)
     cfg.MODEL.SOT = sot_dfdetr()
     return cfg
 
+
 def add_sot_token_config(cfg):
     cfg = add_sot_s3t_config(cfg)
     cfg.MODEL.SOT = sot_token()
     return cfg
 
+
 def add_sot_decode_config(cfg):
     cfg = add_sot_s3t_config(cfg)
     cfg.MODEL.SOT = sot_decode()
     return cfg
+
 
 def add_siamese_ut_decode_proposal_config(cfg):
     ### Tracking Heads
@@ -111,6 +120,7 @@ def add_siamese_ut_token_config(cfg):
     cfg.MOT = mot_default()
 
     return cfg
+
 
 def add_siamese_ut_token_center_config(cfg):
     """
@@ -160,6 +170,7 @@ def add_siamese_ot_config(cfg):
 
     return cfg
 
+
 def add_utt_config(cfg):
     """
     Add config for utt
@@ -176,7 +187,6 @@ def add_utt_config(cfg):
     cfg.MODEL.TWO_STAGE = False
     cfg.MODEL.BOX_REFINE = True
     cfg.MODEL.NORM = 'BN'
-
 
     # cfg.MODEL.USE_QUERY_EMB = False
     # ENCODER
@@ -197,8 +207,6 @@ def add_utt_config(cfg):
     cfg.MODEL.DECODER.DIM_FEEDFORWARD = 1024
     cfg.MODEL.DECODER.PRE_NORM = False
     cfg.MODEL.DECODER.NUM_POINTS = 4
-
-
 
     ### Detection
     cfg.MODEL.BOX_HEAD = boxhead_mlp()
@@ -223,7 +231,6 @@ def add_utt_config(cfg):
     #### MOTS
     cfg.MODEL.MOT.USE_SEGMENTATION = False
     cfg.MODEL.MOT.SEGMENTATION = boxhead_mlp()
-
 
     cfg.SOT = sot_default()
     cfg.MOT = mot_default()

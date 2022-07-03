@@ -7,216 +7,235 @@ import torch.nn as nn
 from trackron.models.layers.activation import get_activation
 
 
-
-
 class BaseConv(nn.Module):
-  """A Conv2d -> Batchnorm -> silu/leaky relu block"""
+    """A Conv2d -> Batchnorm -> silu/leaky relu block"""
 
-  def __init__(self,
-               in_channels,
-               out_channels,
-               ksize,
-               stride,
-               groups=1,
-               bias=False,
-               act="silu"):
-    super().__init__()
-    # same padding
-    pad = (ksize - 1) // 2
-    self.conv = nn.Conv2d(
-        in_channels,
-        out_channels,
-        kernel_size=ksize,
-        stride=stride,
-        padding=pad,
-        groups=groups,
-        bias=bias,
-    )
-    self.bn = nn.BatchNorm2d(out_channels)
-    self.act = get_activation(act, inplace=True)
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 ksize,
+                 stride,
+                 groups=1,
+                 bias=False,
+                 act="silu"):
+        super().__init__()
+        # same padding
+        pad = (ksize - 1) // 2
+        self.conv = nn.Conv2d(
+            in_channels,
+            out_channels,
+            kernel_size=ksize,
+            stride=stride,
+            padding=pad,
+            groups=groups,
+            bias=bias,
+        )
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.act = get_activation(act, inplace=True)
 
-  def forward(self, x):
-    return self.act(self.bn(self.conv(x)))
+    def forward(self, x):
+        return self.act(self.bn(self.conv(x)))
 
-  def fuseforward(self, x):
-    return self.act(self.conv(x))
+    def fuseforward(self, x):
+        return self.act(self.conv(x))
 
 
 class DWConv(nn.Module):
-  """Depthwise Conv + Conv"""
+    """Depthwise Conv + Conv"""
 
-  def __init__(self, in_channels, out_channels, ksize, stride=1, act="silu"):
-    super().__init__()
-    self.dconv = BaseConv(
-        in_channels,
-        in_channels,
-        ksize=ksize,
-        stride=stride,
-        groups=in_channels,
-        act=act,
-    )
-    self.pconv = BaseConv(in_channels,
-                          out_channels,
-                          ksize=1,
-                          stride=1,
-                          groups=1,
-                          act=act)
+    def __init__(self, in_channels, out_channels, ksize, stride=1, act="silu"):
+        super().__init__()
+        self.dconv = BaseConv(
+            in_channels,
+            in_channels,
+            ksize=ksize,
+            stride=stride,
+            groups=in_channels,
+            act=act,
+        )
+        self.pconv = BaseConv(in_channels,
+                              out_channels,
+                              ksize=1,
+                              stride=1,
+                              groups=1,
+                              act=act)
 
-  def forward(self, x):
-    x = self.dconv(x)
-    return self.pconv(x)
+    def forward(self, x):
+        x = self.dconv(x)
+        return self.pconv(x)
 
 
 class Bottleneck(nn.Module):
-  # Standard bottleneck
-  def __init__(
-      self,
-      in_channels,
-      out_channels,
-      shortcut=True,
-      expansion=0.5,
-      depthwise=False,
-      act="silu",
-  ):
-    super().__init__()
-    hidden_channels = int(out_channels * expansion)
-    Conv = DWConv if depthwise else BaseConv
-    self.conv1 = BaseConv(in_channels, hidden_channels, 1, stride=1, act=act)
-    self.conv2 = Conv(hidden_channels, out_channels, 3, stride=1, act=act)
-    self.use_add = shortcut and in_channels == out_channels
+    # Standard bottleneck
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        shortcut=True,
+        expansion=0.5,
+        depthwise=False,
+        act="silu",
+    ):
+        super().__init__()
+        hidden_channels = int(out_channels * expansion)
+        Conv = DWConv if depthwise else BaseConv
+        self.conv1 = BaseConv(in_channels,
+                              hidden_channels,
+                              1,
+                              stride=1,
+                              act=act)
+        self.conv2 = Conv(hidden_channels, out_channels, 3, stride=1, act=act)
+        self.use_add = shortcut and in_channels == out_channels
 
-  def forward(self, x):
-    y = self.conv2(self.conv1(x))
-    if self.use_add:
-      y = y + x
-    return y
+    def forward(self, x):
+        y = self.conv2(self.conv1(x))
+        if self.use_add:
+            y = y + x
+        return y
 
 
 class ResLayer(nn.Module):
-  "Residual layer with `in_channels` inputs."
+    "Residual layer with `in_channels` inputs."
 
-  def __init__(self, in_channels: int):
-    super().__init__()
-    mid_channels = in_channels // 2
-    self.layer1 = BaseConv(in_channels,
-                           mid_channels,
-                           ksize=1,
-                           stride=1,
-                           act="lrelu")
-    self.layer2 = BaseConv(mid_channels,
-                           in_channels,
-                           ksize=3,
-                           stride=1,
-                           act="lrelu")
+    def __init__(self, in_channels: int):
+        super().__init__()
+        mid_channels = in_channels // 2
+        self.layer1 = BaseConv(in_channels,
+                               mid_channels,
+                               ksize=1,
+                               stride=1,
+                               act="lrelu")
+        self.layer2 = BaseConv(mid_channels,
+                               in_channels,
+                               ksize=3,
+                               stride=1,
+                               act="lrelu")
 
-  def forward(self, x):
-    out = self.layer2(self.layer1(x))
-    return x + out
+    def forward(self, x):
+        out = self.layer2(self.layer1(x))
+        return x + out
 
 
 class SPPBottleneck(nn.Module):
-  """Spatial pyramid pooling layer used in YOLOv3-SPP"""
+    """Spatial pyramid pooling layer used in YOLOv3-SPP"""
 
-  def __init__(self,
-               in_channels,
-               out_channels,
-               kernel_sizes=(5, 9, 13),
-               activation="silu"):
-    super().__init__()
-    hidden_channels = in_channels // 2
-    self.conv1 = BaseConv(in_channels,
-                          hidden_channels,
-                          1,
-                          stride=1,
-                          act=activation)
-    self.m = nn.ModuleList([
-        nn.MaxPool2d(kernel_size=ks, stride=1, padding=ks // 2)
-        for ks in kernel_sizes
-    ])
-    conv2_channels = hidden_channels * (len(kernel_sizes) + 1)
-    self.conv2 = BaseConv(conv2_channels,
-                          out_channels,
-                          1,
-                          stride=1,
-                          act=activation)
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_sizes=(5, 9, 13),
+                 activation="silu"):
+        super().__init__()
+        hidden_channels = in_channels // 2
+        self.conv1 = BaseConv(in_channels,
+                              hidden_channels,
+                              1,
+                              stride=1,
+                              act=activation)
+        self.m = nn.ModuleList([
+            nn.MaxPool2d(kernel_size=ks, stride=1, padding=ks // 2)
+            for ks in kernel_sizes
+        ])
+        conv2_channels = hidden_channels * (len(kernel_sizes) + 1)
+        self.conv2 = BaseConv(conv2_channels,
+                              out_channels,
+                              1,
+                              stride=1,
+                              act=activation)
 
-  def forward(self, x):
-    x = self.conv1(x)
-    x = torch.cat([x] + [m(x) for m in self.m], dim=1)
-    x = self.conv2(x)
-    return x
+    def forward(self, x):
+        x = self.conv1(x)
+        x = torch.cat([x] + [m(x) for m in self.m], dim=1)
+        x = self.conv2(x)
+        return x
 
 
 class CSPLayer(nn.Module):
-  """C3 in yolov5, CSP Bottleneck with 3 convolutions"""
+    """C3 in yolov5, CSP Bottleneck with 3 convolutions"""
 
-  def __init__(
-      self,
-      in_channels,
-      out_channels,
-      n=1,
-      shortcut=True,
-      expansion=0.5,
-      depthwise=False,
-      act="silu",
-  ):
-    """
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        n=1,
+        shortcut=True,
+        expansion=0.5,
+        depthwise=False,
+        act="silu",
+    ):
+        """
         Args:
             in_channels (int): input channels.
             out_channels (int): output channels.
             n (int): number of Bottlenecks. Default value: 1.
         """
-    # ch_in, ch_out, number, shortcut, groups, expansion
-    super().__init__()
-    hidden_channels = int(out_channels * expansion)  # hidden channels
-    self.conv1 = BaseConv(in_channels, hidden_channels, 1, stride=1, act=act)
-    self.conv2 = BaseConv(in_channels, hidden_channels, 1, stride=1, act=act)
-    self.conv3 = BaseConv(2 * hidden_channels,
-                          out_channels,
-                          1,
-                          stride=1,
-                          act=act)
-    module_list = [
-        Bottleneck(hidden_channels,
-                   hidden_channels,
-                   shortcut,
-                   1.0,
-                   depthwise,
-                   act=act) for _ in range(n)
-    ]
-    self.m = nn.Sequential(*module_list)
+        # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__()
+        hidden_channels = int(out_channels * expansion)  # hidden channels
+        self.conv1 = BaseConv(in_channels,
+                              hidden_channels,
+                              1,
+                              stride=1,
+                              act=act)
+        self.conv2 = BaseConv(in_channels,
+                              hidden_channels,
+                              1,
+                              stride=1,
+                              act=act)
+        self.conv3 = BaseConv(2 * hidden_channels,
+                              out_channels,
+                              1,
+                              stride=1,
+                              act=act)
+        module_list = [
+            Bottleneck(hidden_channels,
+                       hidden_channels,
+                       shortcut,
+                       1.0,
+                       depthwise,
+                       act=act) for _ in range(n)
+        ]
+        self.m = nn.Sequential(*module_list)
 
-  def forward(self, x):
-    x_1 = self.conv1(x)
-    x_2 = self.conv2(x)
-    x_1 = self.m(x_1)
-    x = torch.cat((x_1, x_2), dim=1)
-    return self.conv3(x)
+    def forward(self, x):
+        x_1 = self.conv1(x)
+        x_2 = self.conv2(x)
+        x_1 = self.m(x_1)
+        x = torch.cat((x_1, x_2), dim=1)
+        return self.conv3(x)
 
 
 class Focus(nn.Module):
-  """Focus width and height information into channel space."""
+    """Focus width and height information into channel space."""
 
-  def __init__(self, in_channels, out_channels, ksize=1, stride=1, act="silu"):
-    super().__init__()
-    self.conv = BaseConv(in_channels * 4, out_channels, ksize, stride, act=act)
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 ksize=1,
+                 stride=1,
+                 act="silu"):
+        super().__init__()
+        self.conv = BaseConv(in_channels * 4,
+                             out_channels,
+                             ksize,
+                             stride,
+                             act=act)
 
-  def forward(self, x):
-    # shape of x (b,c,w,h) -> y(b,4c,w/2,h/2)
-    patch_top_left = x[..., ::2, ::2]
-    patch_top_right = x[..., ::2, 1::2]
-    patch_bot_left = x[..., 1::2, ::2]
-    patch_bot_right = x[..., 1::2, 1::2]
-    x = torch.cat(
-        (
-            patch_top_left,
-            patch_bot_left,
-            patch_top_right,
-            patch_bot_right,
-        ),
-        dim=1,
-    )
-    return self.conv(x)
+    def forward(self, x):
+        # shape of x (b,c,w,h) -> y(b,4c,w/2,h/2)
+        patch_top_left = x[..., ::2, ::2]
+        patch_top_right = x[..., ::2, 1::2]
+        patch_bot_left = x[..., 1::2, ::2]
+        patch_bot_right = x[..., 1::2, 1::2]
+        x = torch.cat(
+            (
+                patch_top_left,
+                patch_bot_left,
+                patch_top_right,
+                patch_bot_right,
+            ),
+            dim=1,
+        )
+        return self.conv(x)
 
 
 class Darknet(nn.Module):
@@ -224,11 +243,11 @@ class Darknet(nn.Module):
     depth2blocks = {21: [1, 2, 2, 1], 53: [2, 8, 8, 4]}
 
     def __init__(
-        self,
-        depth,
-        in_channels=3,
-        stem_out_channels=32,
-        out_features=("dark3", "dark4", "dark5"),
+            self,
+            depth,
+            in_channels=3,
+            stem_out_channels=32,
+            out_features=("dark3", "dark4", "dark5"),
     ):
         """
         Args:
@@ -242,7 +261,11 @@ class Darknet(nn.Module):
         assert out_features, "please provide output features of Darknet"
         self.out_features = out_features
         self.stem = nn.Sequential(
-            BaseConv(in_channels, stem_out_channels, ksize=3, stride=1, act="lrelu"),
+            BaseConv(in_channels,
+                     stem_out_channels,
+                     ksize=3,
+                     stride=1,
+                     act="lrelu"),
             *self.make_group_layer(stem_out_channels, num_blocks=1, stride=2),
         )
         in_channels = stem_out_channels * 2  # 64
@@ -251,44 +274,50 @@ class Darknet(nn.Module):
         # create darknet with `stem_out_channels` and `num_blocks` layers.
         # to make model structure more clear, we don't use `for` statement in python.
         self.dark2 = nn.Sequential(
-            *self.make_group_layer(in_channels, num_blocks[0], stride=2)
-        )
+            *self.make_group_layer(in_channels, num_blocks[0], stride=2))
         in_channels *= 2  # 128
         self.dark3 = nn.Sequential(
-            *self.make_group_layer(in_channels, num_blocks[1], stride=2)
-        )
+            *self.make_group_layer(in_channels, num_blocks[1], stride=2))
         in_channels *= 2  # 256
         self.dark4 = nn.Sequential(
-            *self.make_group_layer(in_channels, num_blocks[2], stride=2)
-        )
+            *self.make_group_layer(in_channels, num_blocks[2], stride=2))
         in_channels *= 2  # 512
 
         self.dark5 = nn.Sequential(
             *self.make_group_layer(in_channels, num_blocks[3], stride=2),
-            *self.make_spp_block([in_channels, in_channels * 2], in_channels * 2),
+            *self.make_spp_block([in_channels, in_channels * 2],
+                                 in_channels * 2),
         )
 
-    def make_group_layer(self, in_channels: int, num_blocks: int, stride: int = 1):
+    def make_group_layer(self,
+                         in_channels: int,
+                         num_blocks: int,
+                         stride: int = 1):
         "starts with conv layer then has `num_blocks` `ResLayer`"
         return [
-            BaseConv(in_channels, in_channels * 2, ksize=3, stride=stride, act="lrelu"),
+            BaseConv(in_channels,
+                     in_channels * 2,
+                     ksize=3,
+                     stride=stride,
+                     act="lrelu"),
             *[(ResLayer(in_channels * 2)) for _ in range(num_blocks)],
         ]
 
     def make_spp_block(self, filters_list, in_filters):
-        m = nn.Sequential(
-            *[
-                BaseConv(in_filters, filters_list[0], 1, stride=1, act="lrelu"),
-                BaseConv(filters_list[0], filters_list[1], 3, stride=1, act="lrelu"),
-                SPPBottleneck(
-                    in_channels=filters_list[1],
-                    out_channels=filters_list[0],
-                    activation="lrelu",
-                ),
-                BaseConv(filters_list[0], filters_list[1], 3, stride=1, act="lrelu"),
-                BaseConv(filters_list[1], filters_list[0], 1, stride=1, act="lrelu"),
-            ]
-        )
+        m = nn.Sequential(*[
+            BaseConv(in_filters, filters_list[0], 1, stride=1, act="lrelu"),
+            BaseConv(
+                filters_list[0], filters_list[1], 3, stride=1, act="lrelu"),
+            SPPBottleneck(
+                in_channels=filters_list[1],
+                out_channels=filters_list[0],
+                activation="lrelu",
+            ),
+            BaseConv(
+                filters_list[0], filters_list[1], 3, stride=1, act="lrelu"),
+            BaseConv(
+                filters_list[1], filters_list[0], 1, stride=1, act="lrelu"),
+        ])
         return m
 
     def forward(self, x):
@@ -307,6 +336,7 @@ class Darknet(nn.Module):
 
 
 class CSPDarknet(nn.Module):
+
     def __init__(
         self,
         dep_mul,
@@ -365,7 +395,9 @@ class CSPDarknet(nn.Module):
         # dark5
         self.dark5 = nn.Sequential(
             Conv(base_channels * 8, base_channels * 16, 3, 2, act=act),
-            SPPBottleneck(base_channels * 16, base_channels * 16, activation=act),
+            SPPBottleneck(base_channels * 16,
+                          base_channels * 16,
+                          activation=act),
             CSPLayer(
                 base_channels * 16,
                 base_channels * 16,
