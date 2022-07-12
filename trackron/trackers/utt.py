@@ -444,7 +444,7 @@ class UTTracker2(UTTracker):
             search_tensor ([type]): [description]
             search_mask ([type]): [description]
         Return:
-          Box coordinate in xyxy format
+            Box coordinate in xyxy format
         """
         with torch.no_grad():
             # TRACED

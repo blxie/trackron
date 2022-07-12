@@ -405,19 +405,19 @@ class UnifiedTransformerTracker(nn.Module):
                         tracking_mode='sot'):
         """[summary]
 
-    Args:
-        search_feature (list of [B C H W]): [tracking frame feature]
-        proposals ([B N 4]): [proposal boxes in normalized coordinates]
-        target_feat ([B N C]): [target features]
-        image_sizes ([B 2]): [Store H W of image sizes]
-        box_format (str, optional): [input boxes format, boxes are normalized]. Defaults to 'xyxy'.
-        box_relative (bool, optional): [output normalized boxes if set to true]. Defaults to True.
-        target_mask ([type], optional): [target mask]. Defaults to None.
-        tracking_mode [str]: 'sot' or 'mot'
+        Args:
+            search_feature (list of [B C H W]): [tracking frame feature]
+            proposals ([B N 4]): [proposal boxes in normalized coordinates]
+            target_feat ([B N C]): [target features]
+            image_sizes ([B 2]): [Store H W of image sizes]
+            box_format (str, optional): [input boxes format, boxes are normalized]. Defaults to 'xyxy'.
+            box_relative (bool, optional): [output normalized boxes if set to true]. Defaults to True.
+            target_mask ([type], optional): [target mask]. Defaults to None.
+            tracking_mode [str]: 'sot' or 'mot'
 
-    Returns:
-        [type]: [description]
-    """
+        Returns:
+            [type]: [description]
+        """
         pooler = None
         if tracking_mode == 'sot':
             search_feature = [search_feature[self.sot_feature_layer]]
@@ -448,16 +448,16 @@ class UnifiedTransformerTracker(nn.Module):
     def prepare_mot_target_feature_proposal(self, features, pred_boxes,
                                             targets):
         """Gernerate MOT proposals on the search frames based on the gt annotations
-       The proposals are only for objects in both template and search frames 
-    Args:
-        features (list of [B C H W]))
-        boxes ([B N 4] [Boxes in cxcywh format (0,1)]
-        spatial_shapes ([L 2]): [Spatial shape (h, w) in each layer]
-        valid_ratios ([B L 2]): [valid area in each feature map]
+        The proposals are only for objects in both template and search frames 
+        Args:
+            features (list of [B C H W]))
+            boxes ([B N 4] [Boxes in cxcywh format (0,1)]
+            spatial_shapes ([L 2]): [Spatial shape (h, w) in each layer]
+            valid_ratios ([B L 2]): [valid area in each feature map]
 
-    Returns:
-        proposals
-    """
+        Returns:
+            proposals
+        """
         pred_det_boxes = pred_boxes.clone().detach()
         gt_det_boxes = [target['boxes'] for target in targets['det_targets']]
         gt_search_boxes = [
@@ -495,6 +495,7 @@ class UnifiedTransformerTracker(nn.Module):
                                     in_format='cxcywh',
                                     out_format='xyxy',
                                     reverse=True)
+        # TRACED
         target_feat = self.get_target_roi_feat(features, abs_boxes,
                                                self.mot_roi).view(
                                                    *abs_boxes.shape[:2], -1)

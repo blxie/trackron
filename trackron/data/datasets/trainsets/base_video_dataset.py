@@ -16,7 +16,7 @@ class BaseVideoDataset(torch.utils.data.Dataset):
         self.root = root
         self.image_loader = image_loader
 
-        self.sequence_list = []     # Contains the list of sequences.
+        self.sequence_list = []  # Contains the list of sequences.
         self.class_list = []
 
     def __len__(self):
@@ -106,4 +106,3 @@ class BaseVideoDataset(torch.utils.data.Dataset):
 
         """
         raise NotImplementedError
-

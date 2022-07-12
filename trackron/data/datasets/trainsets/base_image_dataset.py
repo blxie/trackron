@@ -16,7 +16,7 @@ class BaseImageDataset(torch.utils.data.Dataset):
         self.root = root
         self.image_loader = image_loader
 
-        self.image_list = []     # Contains the list of sequences.
+        self.image_list = []  # Contains the list of sequences.
         self.class_list = []
 
     def __len__(self):
@@ -89,4 +89,3 @@ class BaseImageDataset(torch.utils.data.Dataset):
 
         """
         raise NotImplementedError
-

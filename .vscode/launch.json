@@ -23,6 +23,23 @@
             }
         },
         {
+            "name": "TRAIN-SOT",
+            "type": "python",
+            "request": "launch",
+            "program": "tools/train_net.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config-file",
+                "configs/utt/utt.yaml",
+                "--config-func",
+                "utt",
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
             "name": "TEST-MOT",
             "type": "python",
             "request": "launch",
@@ -37,6 +54,25 @@
                 "--mode",
                 "mot",
                 "--eval-only"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "TRAIN-MOT",
+            "type": "python",
+            "request": "launch",
+            "program": "tools/train_net.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config-file",
+                "configs/utt/utt.yaml",
+                "--config-func",
+                "utt",
+                "--mode",
+                "mot",
             ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"

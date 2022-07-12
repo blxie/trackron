@@ -121,6 +121,9 @@ class BaseTrack(object):
 
 
 class Tracklet(BaseTrack):
+    """跟踪小片段，数据关联
+    A fragment of the track followed by a moving object, as constructed by an image recognition system.
+    """
     shared_kalman = KalmanFilter()
 
     def __init__(self,

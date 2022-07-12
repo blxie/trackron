@@ -27,11 +27,11 @@ def _import_prroi_pooling():
             from torch.utils.cpp_extension import load as load_extension
             root_dir = pjoin(dirname(__file__), 'csrc/prroi')
 
-            _prroi_pooling = load_extension(
-                '_prroi_pooling',
-                [pjoin(root_dir, 'prroi_pooling_gpu.c'), pjoin(root_dir, 'prroi_pooling_gpu_impl.cu')],
-                verbose=True
-            )
+            _prroi_pooling = load_extension('_prroi_pooling', [
+                pjoin(root_dir, 'prroi_pooling_gpu.c'),
+                pjoin(root_dir, 'prroi_pooling_gpu_impl.cu')
+            ],
+                                            verbose=True)
         except ImportError:
             raise ImportError('Can not compile Precise RoI Pooling library.')
 
@@ -39,8 +39,10 @@ def _import_prroi_pooling():
 
 
 class PrRoIPool2DFunction_BK(ag.Function):
+
     @staticmethod
-    def forward(ctx, features, rois, pooled_height, pooled_width, spatial_scale):
+    def forward(ctx, features, rois, pooled_height, pooled_width,
+                spatial_scale):
         _prroi_pooling = _import_prroi_pooling()
 
         assert 'FloatTensor' in features.type() and 'FloatTensor' in rois.type(), \
@@ -55,12 +57,15 @@ class PrRoIPool2DFunction_BK(ag.Function):
         params = (pooled_height, pooled_width, spatial_scale)
 
         if features.is_cuda:
-            output = _prroi_pooling.prroi_pooling_forward_cuda(features, rois, *params)
+            output = _prroi_pooling.prroi_pooling_forward_cuda(
+                features, rois, *params)
             ctx.params = params
             # everything here is contiguous.
             ctx.save_for_backward(features, rois, output)
         else:
-            raise NotImplementedError('Precise RoI Pooling only supports GPU (cuda) implememtations.')
+            raise NotImplementedError(
+                'Precise RoI Pooling only supports GPU (cuda) implememtations.'
+            )
 
         return output
 
@@ -73,16 +78,21 @@ class PrRoIPool2DFunction_BK(ag.Function):
 
         if features.requires_grad:
             grad_output = grad_output.contiguous()
-            grad_input = _prroi_pooling.prroi_pooling_backward_cuda(features, rois, output, grad_output, *ctx.params)
+            grad_input = _prroi_pooling.prroi_pooling_backward_cuda(
+                features, rois, output, grad_output, *ctx.params)
         if rois.requires_grad:
             grad_output = grad_output.contiguous()
-            grad_coor = _prroi_pooling.prroi_pooling_coor_backward_cuda(features, rois, output, grad_output, *ctx.params)
+            grad_coor = _prroi_pooling.prroi_pooling_coor_backward_cuda(
+                features, rois, output, grad_output, *ctx.params)
 
         return grad_input, grad_coor, None, None, None
 
+
 class PrRoIPool2DFunction(ag.Function):
+
     @staticmethod
-    def forward(ctx, features, rois, pooled_height, pooled_width, spatial_scale):
+    def forward(ctx, features, rois, pooled_height, pooled_width,
+                spatial_scale):
         assert 'FloatTensor' in features.type() and 'FloatTensor' in rois.type(), \
                 'Precise RoI Pooling only takes float input, got {} for features and {} for rois.'.format(features.type(), rois.type())
 
@@ -100,7 +110,9 @@ class PrRoIPool2DFunction(ag.Function):
             # everything here is contiguous.
             ctx.save_for_backward(features, rois, output)
         else:
-            raise NotImplementedError('Precise RoI Pooling only supports GPU (cuda) implememtations.')
+            raise NotImplementedError(
+                'Precise RoI Pooling only supports GPU (cuda) implememtations.'
+            )
 
         return output
 
@@ -111,18 +123,21 @@ class PrRoIPool2DFunction(ag.Function):
 
         if features.requires_grad:
             grad_output = grad_output.contiguous()
-            grad_input = OPS.prroi_pooling_backward_cuda(features, rois, output, grad_output, *ctx.params)
+            grad_input = OPS.prroi_pooling_backward_cuda(
+                features, rois, output, grad_output, *ctx.params)
         if rois.requires_grad:
             grad_output = grad_output.contiguous()
-            grad_coor = OPS.prroi_pooling_coor_backward_cuda(features, rois, output, grad_output, *ctx.params)
+            grad_coor = OPS.prroi_pooling_coor_backward_cuda(
+                features, rois, output, grad_output, *ctx.params)
 
         return grad_input, grad_coor, None, None, None
+
 
 prroi_pool2d = PrRoIPool2DFunction.apply
 
 
-
 class PrRoIPool2D(nn.Module):
+
     def __init__(self, pooled_height, pooled_width, spatial_scale):
         super().__init__()
 
@@ -131,8 +146,9 @@ class PrRoIPool2D(nn.Module):
         self.spatial_scale = float(spatial_scale)
 
     def forward(self, features, rois):
-        return PrRoIPool2DFunction.apply(features, rois, self.pooled_height, self.pooled_width, self.spatial_scale)
+        return PrRoIPool2DFunction.apply(features, rois, self.pooled_height,
+                                         self.pooled_width, self.spatial_scale)
 
     def extra_repr(self):
-        return 'kernel_size=({pooled_height}, {pooled_width}), spatial_scale={spatial_scale}'.format(**self.__dict__)
-
+        return 'kernel_size=({pooled_height}, {pooled_width}), spatial_scale={spatial_scale}'.format(
+            **self.__dict__)

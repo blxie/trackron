@@ -118,12 +118,15 @@ def forward_step(data_iters, model, max_fail=10, mode='sot'):
     while fail_time < max_fail:
         try:
             data = next(data_iters)
+            # BUG RuntimeError: Default process group has not been initialized, please make sure to call init_process_group.
+            # 原因：数据未被正确加载
             return model(data, mode=mode)
         except Exception:
             fail_time += 1
             traceback.print_exc()
             logger.warning('retry %d th time' % fail_time)
     traceback.print_exc()
+    # TRACED
     raise ValueError('Cannot get data')
 
 

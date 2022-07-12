@@ -28,6 +28,7 @@ __all__ = [
 ]
 
 
+# TRACED
 def build_batch_data_loader(dataset,
                             sampler,
                             total_batch_size,
@@ -61,8 +62,8 @@ def build_batch_data_loader(dataset,
             sampler=sampler,
             num_workers=num_workers,
             batch_sampler=None,
-            collate_fn=operator.itemgetter(
-                0),  # don't batch, but yield individual elements
+            # don't batch, but yield individual elements
+            collate_fn=operator.itemgetter(0),
             worker_init_fn=worker_init_reset_seed,
         )  # yield individual mapped dict
         return AspectRatioGroupedDataset(data_loader, batch_size)

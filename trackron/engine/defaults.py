@@ -26,19 +26,18 @@ def default_argument_parser(epilog=None):
         argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
-        epilog=epilog or f"""
-Examples:
+        epilog=epilog or f"""Examples:
 
-Run on single machine:
-    $ {sys.argv[0]} --num-gpus 8 --config-file cfg.yaml
+        Run on single machine:
+            $ {sys.argv[0]} --num-gpus 8 --config-file cfg.yaml
 
-Change some config options:
-    $ {sys.argv[0]} --config-file cfg.yaml MODEL.WEIGHTS /path/to/weight.pth SOLVER.BASE_LR 0.001
+        Change some config options:
+            $ {sys.argv[0]} --config-file cfg.yaml MODEL.WEIGHTS /path/to/weight.pth SOLVER.BASE_LR 0.001
 
-Run on multiple machines:
-    (machine0)$ {sys.argv[0]} --machine-rank 0 --num-machines 2 --dist-url <URL> [--other-flags]
-    (machine1)$ {sys.argv[0]} --machine-rank 1 --num-machines 2 --dist-url <URL> [--other-flags]
-""",
+        Run on multiple machines:
+            (machine0)$ {sys.argv[0]} --machine-rank 0 --num-machines 2 --dist-url <URL> [--other-flags]
+            (machine1)$ {sys.argv[0]} --machine-rank 1 --num-machines 2 --dist-url <URL> [--other-flags]
+        """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--config-file",
@@ -54,6 +53,7 @@ Run on multiple machines:
         help="Whether to attempt to resume from the checkpoint directory. "
         "See documentation of `DefaultTrainer.resume_or_load()` for what it means.",
     )
+    # TRACED
     parser.add_argument("--mode",
                         type=str,
                         default="sot",
@@ -92,11 +92,10 @@ Run on multiple machines:
     )
     parser.add_argument(
         "opts",
-        help="""
-Modify config options at the end of the command. For Yacs configs, use
-space-separated "PATH.KEY VALUE" pairs.
-For python-based LazyConfig, use "path.key=value".
-        """.strip(),
+        help=
+        """Modify config options at the end of the command. For Yacs configs,
+        use space-separated "PATH.KEY VALUE" pairs.
+        For python-based LazyConfig, use "path.key=value".""".strip(),
         default=None,
         nargs=argparse.REMAINDER,
     )

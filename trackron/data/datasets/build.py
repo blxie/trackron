@@ -11,12 +11,9 @@ Registered object must return instance of :class:`Backbone`.
 """
 
 
-
-
-
 def no_processing(data):
-  return data
+    return data
+
 
 def build_dataset(cfg, training):
-  return DATASET_REGISTRY.get(cfg.CLASS_NAME)(cfg, training=training)
-
+    return DATASET_REGISTRY.get(cfg.CLASS_NAME)(cfg, training=training)

@@ -77,7 +77,7 @@ class SiameseMOT(nn.Module):
 
   def preprocess_inputs(self, batched_inputs: List[Dict[str, torch.Tensor]]):
     """
-        Normalize, pad and batch the input images.
+    Normalize, pad and batch the input images.
     """
     samples = {}
     for s in ['template', 'search']:

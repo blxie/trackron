@@ -137,11 +137,10 @@ def tracker_collate_stack1(batch):
 
 class TrackingLoader(torch.utils.data.dataloader.DataLoader):
     """
-    Data loader. Combines a dataset and a sampler, and provides
-    single- or multi-process iterators over the dataset.
+    Data loader. Combines a dataset and a sampler, and provides single- or multi-process iterators over the dataset.
 
     Note: The only difference with default pytorch DataLoader is that an additional option stack_dim is available to
-            select along which dimension the data should be stacked to form a batch.
+    select along which dimension the data should be stacked to form a batch.
 
     Arguments:
         dataset (Dataset): dataset from which to load the data.

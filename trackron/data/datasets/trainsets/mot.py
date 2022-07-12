@@ -36,7 +36,7 @@ class MOT(BaseVideoDataset):
                image_loader=jpeg4py_loader,
                data_fraction=None,
                split="train_half",
-               version="mot17"):
+               version="MOT17"):
     """
         args:
             root - path to the coco dataset.

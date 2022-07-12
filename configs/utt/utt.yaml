@@ -89,6 +89,9 @@ MOT:
       MIN_SIZE: [300]
       MODE: 'pair'
     TEST:
+      # DATASET_NAMES: ["lasot"]
+      # SPLITS: [""]
+      # VERSIONS: [""]
       DATASET_NAMES: ["mot_pub"]
       SPLITS: ["val_half"]
       VERSIONS: ["17"]

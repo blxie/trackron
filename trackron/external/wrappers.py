@@ -13,7 +13,8 @@ import torch
 from torch.nn import functional as F
 
 
-def shapes_to_tensor(x: List[int], device: Optional[torch.device] = None) -> torch.Tensor:
+def shapes_to_tensor(x: List[int],
+                     device: Optional[torch.device] = None) -> torch.Tensor:
     """
     Turn a list of integer scalars or integer Tensor scalars into a vector,
     in a way that's both traceable and scriptable.
@@ -24,9 +25,8 @@ def shapes_to_tensor(x: List[int], device: Optional[torch.device] = None) -> tor
     if torch.jit.is_scripting():
         return torch.as_tensor(x, device=device)
     if torch.jit.is_tracing():
-        assert all(
-            [isinstance(t, torch.Tensor) for t in x]
-        ), "Shape should be tensor during tracing!"
+        assert all([isinstance(t, torch.Tensor)
+                    for t in x]), "Shape should be tensor during tracing!"
         # as_tensor should not be used in tracing because it records a constant
         ret = torch.stack(x)
         if ret.device != device:  # avoid recording a hard-coded device if not necessary
@@ -56,6 +56,7 @@ def cross_entropy(input, target, *, reduction="mean", **kwargs):
 
 
 class _NewEmptyTensorOp(torch.autograd.Function):
+
     @staticmethod
     def forward(ctx, x, new_shape):
         ctx.shape = x.shape
@@ -103,9 +104,8 @@ class Conv2d(torch.nn.Conv2d):
                     self.norm, torch.nn.SyncBatchNorm
                 ), "SyncBatchNorm does not support empty inputs!"
 
-        x = F.conv2d(
-            x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups
-        )
+        x = F.conv2d(x, self.weight, self.bias, self.stride, self.padding,
+                     self.dilation, self.groups)
         if self.norm is not None:
             x = self.norm(x)
         if self.activation is not None:

@@ -7,11 +7,20 @@ from .build import BOX_HEAD_REGISTRY
 from trackron.config import configurable
 
 
-def conv(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation=1):
+def conv(in_planes,
+         out_planes,
+         kernel_size=3,
+         stride=1,
+         padding=1,
+         dilation=1):
     return nn.Sequential(
-        nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride,
-                  padding=padding, dilation=dilation, bias=True),
-        nn.BatchNorm2d(out_planes),
+        nn.Conv2d(in_planes,
+                  out_planes,
+                  kernel_size=kernel_size,
+                  stride=stride,
+                  padding=padding,
+                  dilation=dilation,
+                  bias=True), nn.BatchNorm2d(out_planes),
         nn.ReLU(inplace=True))
 
 
@@ -25,7 +34,12 @@ class AtomIoUNet(nn.Module):
         pred_inter_dim:  Intermediate dimensionality in the prediction network."""
 
     @configurable
-    def __init__(self, *, input_dim=(128, 256), pred_input_dim=(256, 256), pred_inter_dim=(256, 256), scale=(1/8, 1/16)):
+    def __init__(self,
+                 *,
+                 input_dim=(128, 256),
+                 pred_input_dim=(256, 256),
+                 pred_inter_dim=(256, 256),
+                 scale=(1 / 8, 1 / 16)):
         """[summary]
 
         Args:
@@ -54,20 +68,28 @@ class AtomIoUNet(nn.Module):
         self.prroi_pool4r = PrRoIPool2D(1, 1, scale[1])
         self.prroi_pool4t = PrRoIPool2D(3, 3, scale[1])
 
-        self.fc34_3r = conv(
-            256 + 256, pred_input_dim[0], kernel_size=1, stride=1, padding=0)
-        self.fc34_4r = conv(
-            256 + 256, pred_input_dim[1], kernel_size=1, stride=1, padding=0)
+        self.fc34_3r = conv(256 + 256,
+                            pred_input_dim[0],
+                            kernel_size=1,
+                            stride=1,
+                            padding=0)
+        self.fc34_4r = conv(256 + 256,
+                            pred_input_dim[1],
+                            kernel_size=1,
+                            stride=1,
+                            padding=0)
 
         self.fc3_rt = LinearBlock(pred_input_dim[0], pred_inter_dim[0], 5)
         self.fc4_rt = LinearBlock(pred_input_dim[1], pred_inter_dim[1], 3)
 
-        self.iou_predictor = nn.Linear(
-            pred_inter_dim[0]+pred_inter_dim[1], 1, bias=True)
+        self.iou_predictor = nn.Linear(pred_inter_dim[0] + pred_inter_dim[1],
+                                       1,
+                                       bias=True)
 
         # Init weights
         for m in self.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d) or isinstance(m, nn.Linear):
+            if isinstance(m, nn.Conv2d) or isinstance(
+                    m, nn.ConvTranspose2d) or isinstance(m, nn.Linear):
                 nn.init.kaiming_normal_(m.weight.data, mode='fan_in')
                 if m.bias is not None:
                     m.bias.data.zero_()
@@ -88,10 +110,12 @@ class AtomIoUNet(nn.Module):
         pred_input_dim = cfg.INTER_INPUT_DIM
         pred_inter_dim = cfg.INTER_OUT_DIM
         scale = cfg.INPUT_FEATURE_SCALE
-        return {"input_dim": input_dim,
-                "pred_input_dim": pred_input_dim,
-                "pred_inter_dim": pred_inter_dim,
-                "scale": scale}
+        return {
+            "input_dim": input_dim,
+            "pred_input_dim": pred_input_dim,
+            "pred_inter_dim": pred_inter_dim,
+            "scale": scale
+        }
 
     def forward(self, feat1, feat2, bb1, proposals2):
         """Runs the ATOM IoUNet during training operation.
@@ -109,8 +133,10 @@ class AtomIoUNet(nn.Module):
         num_sequences = proposals2.shape[1]
 
         # Extract first train sample
-        feat1 = [f[0, ...] if f.dim() == 5 else f.reshape(-1, num_sequences,
-                                                          *f.shape[-3:])[0, ...] for f in feat1]
+        feat1 = [
+            f[0, ...] if f.dim() == 5 else f.reshape(
+                -1, num_sequences, *f.shape[-3:])[0, ...] for f in feat1
+        ]
         bb1 = bb1[0, ...]
 
         # Get modulation vector
@@ -118,10 +144,14 @@ class AtomIoUNet(nn.Module):
 
         iou_feat = self.get_iou_feat(feat2)
 
-        modulation = [f.reshape(1, num_sequences, -1).repeat(num_images,
-                                                             1, 1).reshape(num_sequences*num_images, -1) for f in modulation]
+        modulation = [
+            f.reshape(1, num_sequences,
+                      -1).repeat(num_images, 1,
+                                 1).reshape(num_sequences * num_images, -1)
+            for f in modulation
+        ]
 
-        proposals2 = proposals2.reshape(num_sequences*num_images, -1, 4)
+        proposals2 = proposals2.reshape(num_sequences * num_images, -1, 4)
         pred_iou = self.predict_iou(modulation, iou_feat, proposals2)
         return pred_iou.reshape(num_images, num_sequences, -1)
 
@@ -143,18 +173,22 @@ class AtomIoUNet(nn.Module):
         c4_t_att = c4_t * fc34_4_r.reshape(batch_size, -1, 1, 1)
 
         # Add batch_index to rois
-        batch_index = torch.arange(
-            batch_size, dtype=torch.float32).reshape(-1, 1).to(c3_t.device)
+        batch_index = torch.arange(batch_size, dtype=torch.float32).reshape(
+            -1, 1).to(c3_t.device)
 
         # Push the different rois for the same image along the batch dimension
         num_proposals_per_batch = proposals.shape[1]
 
         # input proposals2 is in format xywh, convert it to x0y0x1y1 format
         proposals_xyxy = torch.cat(
-            (proposals[:, :, 0:2], proposals[:, :, 0:2] + proposals[:, :, 2:4]), dim=2)
+            (proposals[:, :,
+                       0:2], proposals[:, :, 0:2] + proposals[:, :, 2:4]),
+            dim=2)
 
         # Add batch index
-        roi2 = torch.cat((batch_index.reshape(batch_size, -1, 1).expand(-1, num_proposals_per_batch, -1), proposals_xyxy), dim=2)
+        roi2 = torch.cat((batch_index.reshape(batch_size, -1, 1).expand(
+            -1, num_proposals_per_batch, -1), proposals_xyxy),
+                         dim=2)
         roi2 = roi2.reshape(-1, 5).to(proposals_xyxy.device)
 
         roi3t = self.prroi_pool3t(c3_t_att, roi2)
@@ -183,8 +217,8 @@ class AtomIoUNet(nn.Module):
         # Add batch_index to rois
         batch_size = feat3_r.shape[0]
         num_rois = bb.shape[0]
-        batch_index = torch.arange(
-            batch_size, dtype=torch.float32).to(bb.device).repeat(num_rois//batch_size).view(-1,1)
+        batch_index = torch.arange(batch_size, dtype=torch.float32).to(
+            bb.device).repeat(num_rois // batch_size).view(-1, 1)
         # batch_size = bb.shape[0]
         # batch_index = torch.arange(
         #     batch_size, dtype=torch.float32, device=bb.device).view(-1,1)
@@ -211,14 +245,14 @@ class AtomIoUNet(nn.Module):
 
     def get_iou_feat(self, feat2):
         """Get IoU prediction features from a 4 or 5 dimensional backbone input."""
-        feat2 = [f.reshape(-1, *f.shape[-3:]) if f.dim()
-                 == 5 else f for f in feat2]
+        feat2 = [
+            f.reshape(-1, *f.shape[-3:]) if f.dim() == 5 else f for f in feat2
+        ]
         feat3_t, feat4_t = feat2
         c3_t = self.conv3_2t(self.conv3_1t(feat3_t))
         c4_t = self.conv4_2t(self.conv4_1t(feat4_t))
 
         return c3_t, c4_t
-
 
 
 class IoUNet(AtomIoUNet):
@@ -229,9 +263,13 @@ class IoUNet(AtomIoUNet):
         pred_input_dim:  Dimensionality input the the prediction network.
         pred_inter_dim:  Intermediate dimensionality in the prediction network."""
 
-    def __init__(self, input_dim=(128, 256), pred_input_dim=(256, 256), pred_inter_dim=(256, 256)):
+    def __init__(self,
+                 input_dim=(128, 256),
+                 pred_input_dim=(256, 256),
+                 pred_inter_dim=(256, 256)):
         super(IoUNet, self).__init__(input_dim=input_dim,
-                                     pred_input_dim=pred_input_dim, pred_inter_dim=pred_inter_dim)
+                                     pred_input_dim=pred_input_dim,
+                                     pred_inter_dim=pred_inter_dim)
 
     def forward(self, feat1, feat2, bb1, proposals2):
         """Runs the ATOM IoUNet during training operation.
@@ -248,7 +286,6 @@ class IoUNet(AtomIoUNet):
         pred_iou = self.predict_iou(modulation, iou_feat, proposals2)
         return pred_iou
 
-        
 
 class RegressionNet(nn.Module):
     """Network module for box prediction. Refer to the ATOM paper for an illustration of the architecture.
@@ -258,7 +295,11 @@ class RegressionNet(nn.Module):
         pred_input_dim:  Dimensionality input the the prediction network.
         pred_inter_dim:  Intermediate dimensionality in the prediction network."""
 
-    def __init__(self, input_dim=(128, 256), pred_input_dim=(256, 256), pred_inter_dim=(256, 256), scale=(1/8, 1/16)):
+    def __init__(self,
+                 input_dim=(128, 256),
+                 pred_input_dim=(256, 256),
+                 pred_inter_dim=(256, 256),
+                 scale=(1 / 8, 1 / 16)):
         super().__init__()
         # _r for reference, _t for test
         self.conv3_1r = conv(input_dim[0], 128, kernel_size=3, stride=1)
@@ -279,20 +320,28 @@ class RegressionNet(nn.Module):
         self.prroi_pool4r = PrRoIPool2D(1, 1, scale[1])
         self.prroi_pool4t = PrRoIPool2D(3, 3, scale[1])
 
-        self.fc34_3r = conv(
-            256 + 256, pred_input_dim[0], kernel_size=1, stride=1, padding=0)
-        self.fc34_4r = conv(
-            256 + 256, pred_input_dim[1], kernel_size=1, stride=1, padding=0)
+        self.fc34_3r = conv(256 + 256,
+                            pred_input_dim[0],
+                            kernel_size=1,
+                            stride=1,
+                            padding=0)
+        self.fc34_4r = conv(256 + 256,
+                            pred_input_dim[1],
+                            kernel_size=1,
+                            stride=1,
+                            padding=0)
 
         self.fc3_rt = LinearBlock(pred_input_dim[0], pred_inter_dim[0], 5)
         self.fc4_rt = LinearBlock(pred_input_dim[1], pred_inter_dim[1], 3)
 
-        self.bb_predictor = nn.Linear(
-            pred_inter_dim[0]+pred_inter_dim[1], 4, bias=True)
+        self.bb_predictor = nn.Linear(pred_inter_dim[0] + pred_inter_dim[1],
+                                      4,
+                                      bias=True)
 
         # Init weights
         for m in self.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d) or isinstance(m, nn.Linear):
+            if isinstance(m, nn.Conv2d) or isinstance(
+                    m, nn.ConvTranspose2d) or isinstance(m, nn.Linear):
                 nn.init.kaiming_normal_(m.weight.data, mode='fan_in')
                 if m.bias is not None:
                     m.bias.data.zero_()
@@ -320,8 +369,10 @@ class RegressionNet(nn.Module):
         num_sequences = proposals2.shape[1]
 
         # Extract first train sample
-        feat1 = [f[0, ...] if f.dim() == 5 else f.reshape(-1, num_sequences,
-                                                          *f.shape[-3:])[0, ...] for f in feat1]
+        feat1 = [
+            f[0, ...] if f.dim() == 5 else f.reshape(
+                -1, num_sequences, *f.shape[-3:])[0, ...] for f in feat1
+        ]
         bb1 = bb1[0, ...]
 
         # Get modulation vector
@@ -329,10 +380,14 @@ class RegressionNet(nn.Module):
 
         iou_feat = self.get_iou_feat(feat2)
 
-        modulation = [f.reshape(1, num_sequences, -1).repeat(num_images,
-                                                             1, 1).reshape(num_sequences*num_images, -1) for f in modulation]
+        modulation = [
+            f.reshape(1, num_sequences,
+                      -1).repeat(num_images, 1,
+                                 1).reshape(num_sequences * num_images, -1)
+            for f in modulation
+        ]
 
-        proposals2 = proposals2.reshape(num_sequences*num_images, -1, 4)
+        proposals2 = proposals2.reshape(num_sequences * num_images, -1, 4)
         pred_iou = self.predict_bb(modulation, iou_feat, proposals2)
         return pred_iou.reshape(num_images, num_sequences, -1, 4)
 
@@ -354,18 +409,22 @@ class RegressionNet(nn.Module):
         c4_t_att = c4_t * fc34_4_r.reshape(batch_size, -1, 1, 1)
 
         # Add batch_index to rois
-        batch_index = torch.arange(
-            batch_size, dtype=torch.float32).reshape(-1, 1).to(c3_t.device)
+        batch_index = torch.arange(batch_size, dtype=torch.float32).reshape(
+            -1, 1).to(c3_t.device)
 
         # Push the different rois for the same image along the batch dimension
         num_proposals_per_batch = proposals.shape[1]
 
         # input proposals2 is in format xywh, convert it to x0y0x1y1 format
         proposals_xyxy = torch.cat(
-            (proposals[:, :, 0:2], proposals[:, :, 0:2] + proposals[:, :, 2:4]), dim=2)
+            (proposals[:, :,
+                       0:2], proposals[:, :, 0:2] + proposals[:, :, 2:4]),
+            dim=2)
 
         # Add batch index
-        roi2 = torch.cat((batch_index.reshape(batch_size, -1, 1).expand(-1, num_proposals_per_batch, -1), proposals_xyxy), dim=2)
+        roi2 = torch.cat((batch_index.reshape(batch_size, -1, 1).expand(
+            -1, num_proposals_per_batch, -1), proposals_xyxy),
+                         dim=2)
         roi2 = roi2.reshape(-1, 5).to(proposals_xyxy.device)
 
         roi3t = self.prroi_pool3t(c3_t_att, roi2)
@@ -376,7 +435,8 @@ class RegressionNet(nn.Module):
 
         fc34_rt_cat = torch.cat((fc3_rt, fc4_rt), dim=1)
 
-        bb_pred = self.bb_predictor(fc34_rt_cat).reshape(batch_size, num_proposals_per_batch, 4)
+        bb_pred = self.bb_predictor(fc34_rt_cat).reshape(
+            batch_size, num_proposals_per_batch, 4)
 
         return bb_pred
 
@@ -393,8 +453,8 @@ class RegressionNet(nn.Module):
         # Add batch_index to rois
         batch_size = feat3_r.shape[0]
         num_rois = bb.shape[0]
-        batch_index = torch.arange(
-            batch_size, dtype=torch.float32).to(bb.device).repeat(num_rois//batch_size).view(-1,1)
+        batch_index = torch.arange(batch_size, dtype=torch.float32).to(
+            bb.device).repeat(num_rois // batch_size).view(-1, 1)
         # batch_size = bb.shape[0]
         # batch_index = torch.arange(
         #     batch_size, dtype=torch.float32, device=bb.device).view(-1,1)
@@ -421,8 +481,9 @@ class RegressionNet(nn.Module):
 
     def get_iou_feat(self, feat2):
         """Get IoU prediction features from a 4 or 5 dimensional backbone input."""
-        feat2 = [f.reshape(-1, *f.shape[-3:]) if f.dim()
-                 == 5 else f for f in feat2]
+        feat2 = [
+            f.reshape(-1, *f.shape[-3:]) if f.dim() == 5 else f for f in feat2
+        ]
         feat3_t, feat4_t = feat2
         c3_t = self.conv3_2t(self.conv3_1t(feat3_t))
         c4_t = self.conv4_2t(self.conv4_1t(feat4_t))

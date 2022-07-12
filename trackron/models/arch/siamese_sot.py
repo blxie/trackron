@@ -90,7 +90,7 @@ class SiameseSOT(BaseModel):
 
   def preprocess_inputs(self, inputs: Dict[str, torch.Tensor]):
     """
-        Normalize, pad and batch the input images.
+    Normalize, pad and batch the input images.
     """
     samples = {}
     for s in ['template', 'search']:
